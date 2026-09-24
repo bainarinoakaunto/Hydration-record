@@ -726,6 +726,25 @@ main{
     flex-direction:column;
   }
 }
+
+#accessRecordNotice{
+  position:fixed;left:16px;right:16px;bottom:16px;z-index:999999;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 16px;background:rgba(255,255,255,.98);color:#203547;
+  border:1px solid #dce7ed;border-radius:12px;
+  box-shadow:0 8px 30px rgba(20,50,70,.22);backdrop-filter:blur(8px);
+}
+#accessRecordNotice.hidden{display:none!important}
+.access-record-text{font-size:.82rem;line-height:1.55}
+.access-record-ok{flex:0 0 auto;border:0;border-radius:7px;padding:9px 18px;
+  background:#159edb;color:#fff;font-weight:700;cursor:pointer}
+.access-record-ok:hover{opacity:.9}
+@media(max-width:768px){
+  #accessRecordNotice{left:10px;right:10px;bottom:10px;padding:12px;align-items:flex-end}
+  .access-record-text{font-size:.75rem}
+  .access-record-ok{padding:8px 14px}
+}
+
 </style>
 </head>
 
@@ -1447,6 +1466,24 @@ main{
 
 </div>
 
+
+
+<iframe name="accessRecordFrame" id="accessRecordFrame" style="display:none" title="access record"></iframe>
+<form id="accessRecordForm"
+ action="https://docs.google.com/forms/d/e/1FAIpQLSccfR4g1Ytnzr0aLv31R3NkjUWRmaaD6YwQnjNYF0d60Uexmg/formResponse"
+ method="POST" target="accessRecordFrame" style="display:none" aria-hidden="true">
+ <input type="hidden" name="entry.1390942320" id="accessRecordDate">
+ <input type="hidden" name="entry.600562719" id="accessRecordUrl">
+ <input type="hidden" name="entry.32786128" id="accessRecordTitle">
+ <input type="hidden" name="entry.318452337" id="accessRecordDevice">
+ <input type="hidden" name="entry.1152326462" id="accessRecordOS">
+ <input type="hidden" name="entry.777710718" id="accessRecordBrowser">
+</form>
+<div id="accessRecordNotice">
+ <div class="access-record-text">このサイトでは、アクセス日時・ページURL・ページタイトル・端末・OS・ブラウザ等のアクセス情報を記録しています。</div>
+ <button type="button" id="accessRecordOk" class="access-record-ok"
+  onclick="try{sessionStorage.setItem('bainari_access_record_notice_closed','1')}catch(e){};var n=document.getElementById('accessRecordNotice');if(n)n.remove();">OK</button>
+</div>
 
 <script>
 
@@ -2563,6 +2600,56 @@ if(
 
 }
 
+
+
+function getAccessDevice(){
+ const ua=navigator.userAgent||"";
+ if(/iPad|Tablet|Android(?!.*Mobile)/i.test(ua))return"タブレット";
+ if(/Mobi|iPhone|iPod|Android/i.test(ua))return"スマートフォン";
+ return"PC";
+}
+function getAccessOS(){
+ const ua=navigator.userAgent||"",p=navigator.platform||"";
+ if(/Windows/i.test(ua))return"Windows";
+ if(/Android/i.test(ua))return"Android";
+ if(/iPhone|iPod/i.test(ua))return"iOS";
+ if(/iPad/i.test(ua))return"iPadOS";
+ if(/Mac OS X|Macintosh/i.test(ua)||/Mac/i.test(p))return"macOS";
+ if(/CrOS/i.test(ua))return"ChromeOS";
+ if(/Linux/i.test(ua))return"Linux";
+ return"その他";
+}
+function getAccessBrowser(){
+ const ua=navigator.userAgent||"";
+ if(/Edg\//i.test(ua))return"Edge";
+ if(/OPR\//i.test(ua)||/Opera/i.test(ua))return"Opera";
+ if(/Chrome\//i.test(ua)&&!/Edg\//i.test(ua)&&!/OPR\//i.test(ua))return"Chrome";
+ if(/Firefox\//i.test(ua))return"Firefox";
+ if(/Safari\//i.test(ua)&&!/Chrome\//i.test(ua)&&!/CriOS\//i.test(ua))return"Safari";
+ return"その他";
+}
+function recordAccessInfo(){
+ const form=document.getElementById("accessRecordForm");if(!form)return;
+ const d=new Date();
+ const dateText=d.getFullYear()+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+String(d.getDate()).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
+ document.getElementById("accessRecordDate").value=dateText;
+ document.getElementById("accessRecordUrl").value=location.href;
+ document.getElementById("accessRecordTitle").value=document.title;
+ document.getElementById("accessRecordDevice").value=getAccessDevice();
+ document.getElementById("accessRecordOS").value=getAccessOS();
+ document.getElementById("accessRecordBrowser").value=getAccessBrowser();
+ try{form.submit()}catch(e){console.warn("アクセス情報の記録に失敗しました。",e)}
+}
+function initAccessRecordNotice(){
+ try{
+  if(sessionStorage.getItem("bainari_access_record_notice_closed")==="1"){
+   const n=document.getElementById("accessRecordNotice");if(n)n.remove();
+  }
+ }catch(e){}
+ recordAccessInfo();
+}
+
+initAccessRecordNotice();
 </script>
 
 </body>
