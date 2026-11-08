@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FS-TWSGKDA03 音質シミュレーター</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#121e31;--line:#263852;--mint:#69e0c1;--muted:#a8b7c9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#172c42,#0b1220 60%);color:#eef6ff;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+main{max-width:900px;margin:auto;padding:24px 16px 48px}h1{font-size:clamp(24px,5vw,36px);margin:8px 0}p{line-height:1.7;color:var(--muted)}
+.tag{color:var(--mint);font-weight:700;letter-spacing:.08em;font-size:12px}
+.panel{background:#121e31eF;border:1px solid var(--line);border-radius:18px;padding:18px;margin:16px 0;box-shadow:0 12px 35px #0003}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,select{background:#20344c;color:#f5fbff;border:1px solid #38516c;border-radius:11px;padding:11px 15px;font:inherit;cursor:pointer}
+button.primary{background:var(--mint);color:#06251e;border:0;font-weight:800}button:disabled{opacity:.5;cursor:not-allowed}
+button.active{outline:2px solid var(--mint)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.control{background:#0d1929;border:1px solid var(--line);border-radius:13px;padding:13px}
+label{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-bottom:9px}
+input[type=range]{width:100%;accent-color:var(--mint)}
+small{color:var(--muted)}.meter{height:9px;background:#263852;border-radius:20px;overflow:hidden;margin-top:10px}.meter span{display:block;height:100%;width:0;background:var(--mint);transition:width .1s}
+.note{border-left:3px solid var(--mint);padding:10px 13px;background:#10283a;border-radius:0 10px 10px 0;color:#d8e9f5}
+footer{font-size:12px;color:#8498ad;margin-top:25px}
+</style>
+</head>
+<body>
+<main>
+<div class="tag">DAISO / FSC • AUDIO EXPERIENCE</div>
+<h1>FS-TWSGKDA03<br>音質シミュレーター</h1>
+<p>低音・ボーカル・高音のバランスを調整しながら、音の傾向を体験できます。イヤホンを接続して再生すると、実際のイヤホン越しにも聴き比べできます。</p>
+
+<section class="panel">
+<h2>① 試聴する音を選ぶ</h2>
+<div class="row">
+<button class="primary" id="play">▶ 再生</button><button id="stop">■ 停止</button>
+<select id="sound" aria-label="試聴音">
+<option value="mix">音質チェック（低音＋ボーカル＋高音）</option>
+<option value="bass">低音チェック</option><option value="voice">ボーカル風チェック</option>
+<option value="high">高音チェック</option><option value="piano">ピアノ風チェック</option>
+<option value="beat">リズムチェック</option>
+</select>
+</div>
+<p id="status" aria-live="polite">停止中です。再生ボタンを押してください。</p>
+<div class="meter"><span id="meter"></span></div>
+<small>音量は控えめから始めてください。耳に負担を感じたらすぐ停止してください。</small>
+</section>
+
+<section class="panel">
+<h2>② 音質モード</h2>
+<div class="row">
+<button class="active" data-mode="sim">FS-TWSGKDA03風</button>
+<button data-mode="flat">フラット（比較用）</button>
+<button data-mode="custom">カスタム</button>
+</div>
+<p id="modeText">低音をやや強め、中音域に少し厚み、高音域は控えめにした参考チューニングです。普通モードと同じ音源で聴き比べできます。</p>
+<div class="grid">
+<div class="control"><label for="bassGain">低音 <b id="bassVal">+2 dB</b></label><input id="bassGain" type="range" min="-8" max="8" step="0.5" value="2"></div>
+<div class="control"><label for="midGain">中音 <b id="midVal">-1 dB</b></label><input id="midGain" type="range" min="-8" max="8" step="0.5" value="-1"></div>
+<div class="control"><label for="highGain">高音 <b id="highVal">-2 dB</b></label><input id="highGain" type="range" min="-8" max="8" step="0.5" value="-2"></div>
+<div class="control"><label for="volume">再生音量 <b id="volVal">15%</b></label><input id="volume" type="range" min="0" max="35" step="1" value="15"></div>
+</div>
+</section>
+
+
+<section class="panel">
+<h2>④ YouTube動画で聴き比べ</h2>
+<p>YouTubeの音楽・試聴動画のURLを貼り付けると、このページ内にプレーヤーを表示します。</p>
+<div class="row">
+<input id="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=..." style="flex:1;min-width:230px;background:#0d1929;color:#eef6ff;border:1px solid #38516c;border-radius:11px;padding:12px;font:inherit">
+<button class="primary" id="loadYoutube">動画を読み込む</button>
+</div>
+<p id="youtubeStatus" aria-live="polite">YouTubeのURLを入力してください。</p>
+<div id="youtubeFrame" style="display:none;position:relative;width:100%;aspect-ratio:16/9;border-radius:13px;overflow:hidden;background:#000;margin-top:12px">
+<iframe id="youtubePlayer" title="YouTube動画プレーヤー" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+<p><a id="youtubeOpen" href="#" target="_blank" rel="noopener noreferrer" style="color:#69e0c1;display:none">YouTubeで動画を開く ↗</a></p>
+<small>動画によっては投稿者の設定や年齢制限などにより、ページ内で再生できない場合があります。その場合はYouTubeで開いてください。</small>
+</section>
+
+<section class="panel">
+<h2>⑤ このシミュレーターについて</h2>
+<p class="note">FS-TWSGKDA03の実測周波数特性を再現したものではありません。公開レビューで見られる「低音は比較的しっかり」「中音は少しこもる場合がある」「高音は控えめ」という感想を参考にした、聴き比べ用の簡易イメージです。</p>
+<p>実際の聞こえ方は、耳の形・装着位置・スマートフォン・Bluetoothコーデック・音源によって変わります。ブラウザーの音声処理にも限界があるため、製品そのものの音質を完全再現するものではありません。</p>
+</section>
+<footer>Web Audio API使用・外部音源なし。音声はこのページ内で生成しています。</footer>
+</main>
+<script>
+let ctx=null, master=null, filters=[], nodes=[], timer=null, playing=false, mode='sim', beatTimer=null;
+const $=id=>document.getElementById(id);
+function ensureAudio(){
+ if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=.15;master.connect(ctx.destination);
+ const low=ctx.createBiquadFilter();low.type='lowshelf';low.frequency.value=180;
+ const mid=ctx.createBiquadFilter();mid.type='peaking';mid.frequency.value=1100;mid.Q.value=.8;
+ const high=ctx.createBiquadFilter();high.type='highshelf';high.frequency.value=5000;
+ low.connect(mid);mid.connect(high);high.connect(master);filters=[low,mid,high];}
+ if(ctx.state==='suspended')ctx.resume();
+}
+function setGains(){if(!ctx)return;filters[0].gain.value=+$('bassGain').value;filters[1].gain.value=+$('midGain').value;filters[2].gain.value=+$('highGain').value;master.gain.value=+$('volume').value/100;}
+function tone(freq,duration=.45,wave='sine',gain=.16,when=0){
+ const o=ctx.createOscillator(),g=ctx.createGain();o.type=wave;o.frequency.value=freq;
+ g.gain.setValueAtTime(.0001,ctx.currentTime+when);g.gain.exponentialRampToValueAtTime(gain,ctx.currentTime+when+.025);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+when+duration);
+ o.connect(g);g.connect(filters[0]);o.start(ctx.currentTime+when);o.stop(ctx.currentTime+when+duration+.04);nodes.push(o);
+}
+function noise(duration=.18,when=0,gain=.035){
+ const n=Math.floor(ctx.sampleRate*duration),b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+ for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+ const s=ctx.createBufferSource(),g=ctx.createGain();s.buffer=b;g.gain.value=gain;s.connect(g);g.connect(filters[0]);s.start(ctx.currentTime+when);nodes.push(s);
+}
+function stop(){playing=false;clearInterval(timer);timer=null;nodes.forEach(n=>{try{n.stop()}catch(e){}});nodes=[];$('status').textContent='停止中です。';$('meter').style.width='0%';}
+function play(){
+ ensureAudio();stop();playing=true;$('status').textContent='再生中：'+$('sound').selectedOptions[0].text;
+ const kind=$('sound').value;let t=0;
+ const tick=()=>{
+  if(!playing)return;
+  if(kind==='bass'){tone(55,.55,'sine',.2);tone(82,.4,'triangle',.09,.12);}
+  else if(kind==='voice'){[220,261.6,293.7,329.6,293.7,261.6].forEach((f,i)=>tone(f,.22,'triangle',.075,i*.16));}
+  else if(kind==='high'){[3000,4200,5500,7000].forEach((f,i)=>tone(f,.18,'sine',.055,i*.2));}
+  else if(kind==='piano'){[261.6,329.6,392,523.3].forEach((f,i)=>tone(f,.8,'triangle',.075,i*.24));}
+  else if(kind==='beat'){tone(90,.12,'sine',.15);noise(.12,.02,.045);tone(180,.08,'triangle',.04,.25);}
+  else {tone(65,.45,'sine',.15);[220,277,330].forEach((f,i)=>tone(f,.35,'triangle',.055,.12+i*.08));tone(4400,.16,'sine',.035,.48);}
+  $('meter').style.width=(20+Math.random()*75)+'%';
+ };
+ tick();timer=setInterval(tick,kind==='beat'?650:1450);
+}
+$('play').onclick=play;$('stop').onclick=stop;
+['bassGain','midGain','highGain','volume'].forEach(id=>$(id).addEventListener('input',()=>{
+ const suffix=id==='volume'?'%':' dB',v=$(id).value;
+ $(id.replace('Gain','')+'Val') && ($(id.replace('Gain','')+'Val').textContent=(id==='volume'?v+suffix:(+v>0?'+':'')+v+suffix));
+ if(id==='volume')$('volVal').textContent=v+'%';setGains();
+ if(id!=='volume'&&mode!=='custom'){mode='custom';document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode==='custom'));$('modeText').textContent='カスタム設定です。スライダーで好みの音に調整できます。';}
+}));
+function applyMode(m){mode=m;const vals=m==='flat'?[0,0,0]:m==='sim'?[2,-1,-2]:[$('bassGain').value,$('midGain').value,$('highGain').value];
+ ['bassGain','midGain','highGain'].forEach((id,i)=>$(id).value=vals[i]);
+ ['bassGain','midGain','highGain'].forEach(id=>$(id).dispatchEvent(new Event('input')));
+ mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+ $('modeText').textContent=m==='sim'?'低音をやや強め、中音域に少し厚み、高音域は控えめにした参考チューニングです。普通モードと同じ音源で聴き比べできます。':m==='flat'?'普通の音（イコライザー補正なし）です。①と同じ試聴音を再生したまま切り替えると、音の違いを比べられます。':'カスタム設定です。スライダーで好みの音に調整できます。';
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>applyMode(b.dataset.mode));
+
+const youtubeInput=$('youtubeUrl'), youtubeStatus=$('youtubeStatus'), youtubeFrame=$('youtubeFrame'), youtubePlayer=$('youtubePlayer'), youtubeOpen=$('youtubeOpen');
+function getYoutubeId(raw){
+ try{const u=new URL(raw.trim());const host=u.hostname.toLowerCase();if(!['youtube.com','www.youtube.com','m.youtube.com','youtu.be','www.youtube-nocookie.com','youtube-nocookie.com'].includes(host))return null;
+ let id='';if(host==='youtu.be')id=u.pathname.split('/').filter(Boolean)[0]||'';else if(u.pathname==='/watch')id=u.searchParams.get('v')||'';else if(/^\/(embed|shorts|live)\//.test(u.pathname))id=u.pathname.split('/')[2]||'';
+ return /^[A-Za-z0-9_-]{11}$/.test(id)?id:null;}catch(e){return null;}
+}
+$('loadYoutube').addEventListener('click',()=>{const raw=youtubeInput.value.trim(),id=getYoutubeId(raw);if(!id){youtubeStatus.textContent='YouTubeの動画URLを確認してください（通常動画・Shorts・youtu.beに対応）。';youtubeFrame.style.display='none';youtubePlayer.src='';youtubeOpen.style.display='none';return;}
+ const embed='https://www.youtube-nocookie.com/embed/'+id;youtubePlayer.src=embed;youtubeFrame.style.display='block';youtubeStatus.textContent='動画を読み込みました。プレーヤー内の再生ボタンを押してください。';youtubeOpen.href='https://www.youtube.com/watch?v='+id;youtubeOpen.style.display='inline-block';});
+youtubeInput.addEventListener('keydown',e=>{if(e.key==='Enter')$('loadYoutube').click();});
+
+window.addEventListener('beforeunload',stop);
+</script>
+</body></html>
